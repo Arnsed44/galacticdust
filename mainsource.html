@@ -1,1 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Clicker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #01040f;
+            --primary-color: #00e5ff;
+            --secondary-color: #45a29e;
+            --text-color: #c5c6c7;
+            --accent-color: #1f2833;
+            --button-bg-light: #2c3542;
+            --button-border: rgba(0, 229, 255, 0.5);
+            --font-family: 'Orbitron', sans-serif;
+            --glow-primary: 0 0 15px var(--primary-color);
+            --glow-secondary: 0 0 10px rgba(76, 217, 100, 0.8);
+            --glow-danger: 0 0 10px rgba(255, 69, 0, 0.8);
+            --admin-color: #ff69b4;
+            --disaster-color: #e74c3c;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0a1128, #01040f);
+            z-index: -1;
+            animation: starfield-scroll 200s linear infinite;
+        }
+        
+        #starfield::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            animation: starfield-twinkle 120s linear infinite;
+            background-image: radial-gradient(#ffffff 1px, transparent 1px), radial-gradient(#ffffff 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.2;
+            z-index: -2;
+        }
+        
+        @keyframes starfield-scroll {
+            from { background-position: 0% 0%; }
+            to { background-position: 100% 100%; }
+        }
+        
+        @keyframes starfield-twinkle {
+            from { transform: translate(0, 0); }
+            to { transform: translate(50px, 50px); }
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            text-shadow: 0 0 15px var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            text-shadow: var(--glow-primary);
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 1400px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            padding-bottom: 5rem;
+        }
+        
+        .main-clicker-area, .sidebar > div {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: var(--glow-primary);
+            border: 1px solid var(--button-border);
+            transition: all 0.3s ease;
+        }
+        
+        .main-clicker-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #click-button {
+            width: 200px;
+            height: 200px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 1rem;
+            -webkit-tap-highlight-color: transparent;
+        }
 
+        #click-button #planet-svg {
+            transform-origin: center center;
+            animation: planet-glow 4s infinite ease-in-out;
+        }
+        
+        #click-button:active #planet-svg {
+            transform: scale(0.95);
+            animation: none;
+        }
+
+        @keyframes planet-glow {
+            0% { filter: drop-shadow(0 0 25px var(--primary-color)) drop-shadow(0 0 5px var(--secondary-color)); }
+            50% { filter: drop-shadow(0 0 40px var(--primary-color)) drop-shadow(0 0 10px var(--secondary-color)); }
+            100% { filter: drop-shadow(0 0 25px var(--primary-color)) drop-shadow(0 0 5px var(--secondary-color)); }
+        }
+        
+        .click-animation {
+            position: absolute;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            animation: floatUp 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            pointer-events: none;
+            text-shadow: var(--glow-primary);
+            z-index: 100;
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.2); opacity: 0; }
+        }
+        
+        .controls-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-label {
+            white-space: nowrap;
+            text-shadow: var(--glow-secondary);
+        }
+        
+        .select-control, .control-button {
+            background: var(--accent-color);
+            border: 2px solid var(--secondary-color);
+            color: var(--text-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-family: var(--font-family);
+            cursor: pointer;
+            appearance: none;
+            transition: all 0.2s;
+            box-shadow: var(--glow-secondary);
+        }
+        
+        .control-button:hover:not(:disabled) {
+            background: var(--secondary-color);
+            box-shadow: 0 0 20px var(--secondary-color);
+        }
+
+        .upgrade-item {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .upgrade-button {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 1.25rem 1.5rem;
+            background: rgba(15, 23, 42, 0.5);
+            border: 2px solid var(--button-border);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-family: var(--font-family);
+            color: var(--text-color);
+            text-align: left;
+            position: relative;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        
+        .buy-max-upgrade-button {
+            background: rgba(52, 152, 219, 0.5);
+            border: 2px solid #3498db;
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 0 0 5px #fff;
+            width: 80px;
+            flex-grow: 0;
+            padding: 1.25rem 0.5rem;
+        }
+        
+        .upgrade-button.evolve-button {
+            background: rgba(30, 130, 76, 0.5);
+            border-color: #27ae60;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .upgrade-button:hover:not(:disabled) {
+            background: rgba(0, 229, 255, 0.1);
+            box-shadow: var(--glow-primary);
+            transform: translateY(-2px);
+        }
+        
+        .upgrade-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
+            filter: grayscale(100%);
+            box-shadow: none;
+        }
+        
+        .upgrade-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .upgrade-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: block;
+            margin-bottom: 0.25rem;
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+        
+        .upgrade-stats {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            white-space: nowrap;
+        }
+        
+        .upgrade-cost {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+            margin-top: 0.5rem;
+            text-shadow: 0 0 5px #fff;
+        }
+        
+        .upgrade-sell-button {
+            width: 60px;
+            background: rgba(231, 76, 60, 0.5);
+            color: #fff;
+            border: 2px solid #e74c3c;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-family: var(--font-family);
+            transition: background-color 0.2s;
+            align-self: center;
+            height: 100%;
+            padding: 0;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.2);
+        }
+        
+        .upgrade-sell-button:hover:not(:disabled) {
+            background-color: #c0392b;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
+        }
+        
+        .upgrade-sell-button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .prestige-button, .tutorial-button, .action-button, #buy-max-button {
+            width: 100%;
+            border: none;
+            color: #fff;
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            font-family: var(--font-family);
+            margin-top: 1rem;
+            text-shadow: 0 0 5px #fff;
+        }
+        
+        .prestige-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee9b00);
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+        }
+        
+        .tutorial-button {
+            background: linear-gradient(45deg, #5c62d6, #5c84d6);
+            box-shadow: 0 0 15px rgba(92, 98, 214, 0.5);
+        }
+        
+        .action-button {
+            background: linear-gradient(45deg, #1abc9c, #16a085);
+            box-shadow: 0 0 15px rgba(26, 188, 156, 0.5);
+        }
+
+        #buy-max-button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
+        }
+        
+        .prestige-button:disabled, .tutorial-button:disabled, .action-button:disabled, #buy-max-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .prestige-button:hover:not(:disabled), .action-button:hover:not(:disabled), #buy-max-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+        }
+        
+        .prestige-message {
+            margin-top: 1rem;
+            color: var(--primary-color);
+            text-shadow: var(--glow-primary);
+        }
+        
+        #message-box {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(31, 40, 51, 0.9);
+            color: var(--primary-color);
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            border: 2px solid var(--primary-color);
+            z-index: 1000;
+            display: none;
+            animation: fadeInOut 3s forwards;
+            white-space: nowrap;
+            box-shadow: var(--glow-primary);
+            text-shadow: 0 0 5px #fff;
+        }
+        
+        #disaster-message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(31, 40, 51, 0.9);
+            color: var(--disaster-color);
+            padding: 2rem 4rem;
+            border-radius: 1.5rem;
+            border: 3px solid var(--disaster-color);
+            z-index: 1001;
+            font-size: 2rem;
+            font-weight: bold;
+            text-shadow: 0 0 15px var(--disaster-color);
+            display: none;
+            animation: disasterAlert 1s infinite alternate;
+        }
+        
+        @keyframes disasterAlert {
+            from { box-shadow: 0 0 20px var(--disaster-color); }
+            to { box-shadow: 0 0 30px var(--disaster-color); }
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .investment-status {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            box-shadow: inset 0 0 5px rgba(0, 229, 255, 0.1);
+        }
+        
+        .investment-status p { margin: 0; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: var(--accent-color);
+            margin: 10% auto;
+            padding: 2rem;
+            border: 2px solid var(--primary-color);
+            width: 80%;
+            max-width: 600px;
+            border-radius: 1.5rem;
+            position: relative;
+            box-shadow: var(--glow-primary);
+        }
+        
+        .close-button {
+            color: var(--primary-color);
+            position: absolute;
+            top: 1rem;
+            right: 2rem;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s, text-shadow 0.2s;
+        }
+        
+        .close-button:hover, .close-button:focus {
+            color: #fff;
+            text-shadow: 0 0 5px #fff;
+        }
+        
+        .tutorial-text {
+            text-align: left;
+            line-height: 1.6;
+        }
+        
+        .tutorial-text ul {
+            list-style-type: none;
+            padding-left: 0;
+            text-align: left;
+        }
+
+        .tutorial-text ul li {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tutorial-text ul li::before {
+            content: '🚀';
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        
+        .collapsible-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            box-shadow: var(--glow-primary);
+            border: 1px solid var(--button-border);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .collapsible-header {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            text-shadow: var(--glow-primary);
+            border-bottom: 1px solid var(--button-border);
+            transition: background-color 0.2s;
+        }
+
+        .collapsible-header:hover {
+            background-color: rgba(0, 229, 255, 0.05);
+        }
+        
+        .collapsible-header .icon {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .collapsible-header.open .icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            padding: 0 2rem;
+            max-height: 0;
+            overflow-y: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+
+        .collapsible-content.open {
+            padding: 2rem;
+            max-height: 2000px;
+            overflow-y: auto;
+            transition: max-height 0.5s ease-in-out;
+        }
+        
+        .collapsible-content.open::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .collapsible-content.open::-webkit-scrollbar-track {
+            background: var(--accent-color);
+            border-radius: 10px;
+        }
+
+        .collapsible-content.open::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+
+        .cheat-panel-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .cheat-button {
+            background: var(--admin-color);
+            border: none;
+            color: #fff;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-shadow: 0 0 5px #fff;
+        }
+
+        .cheat-button:hover {
+            background: #ff479c;
+        }
+
+        #cheat-notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 69, 0, 0.9);
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 3px solid #ff4500;
+            z-index: 2000;
+            display: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: var(--glow-danger);
+            text-shadow: 0 0 10px white;
+            text-align: center;
+            position: relative;
+        }
+        
+        #cheat-notification .close-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        #cheat-mark {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            color: var(--disaster-color);
+            font-family: var(--font-family);
+            font-weight: bold;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px var(--disaster-color);
+            display: none;
+            pointer-events: none;
+        }
+        
+        @media (min-width: 768px) {
+            .game-container {
+                grid-template-columns: 2fr 1fr;
+            }
+        
+            .main-clicker-area {
+                grid-column: 1 / 2;
+                grid-row: 1 / 3;
+            }
+        
+            .stats-display { display: none; }
+        
+            .sidebar-stats {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.5rem;
+                background: rgba(15, 23, 42, 0.7);
+                backdrop-filter: blur(10px);
+                border-radius: 1.5rem;
+                box-shadow: var(--glow-primary);
+                border: 1px solid var(--button-border);
+            }
+        
+            .sidebar {
+                display: flex;
+                flex-direction: column;
+                gap: 2rem;
+            }
+        }
+        
+        @media (max-width: 767px) {
+            .sidebar-stats { display: none; }
+        
+            .upgrades-container, .prestige-container, .investment-container, .evolution-container {
+                margin: 0 -1rem;
+            }
+        
+            .modal-content {
+                width: 90%;
+                margin: 5% auto;
+            }
+            .upgrade-button {
+                padding: 1rem;
+            }
+            .upgrade-name {
+                font-size: 1rem;
+            }
+            .upgrade-stats {
+                font-size: 0.8rem;
+            }
+            .upgrade-cost {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="starfield"></div>
+
+    <main class="game-container">
+        <div class="main-clicker-area">
+            <h1>Galactic Clicker</h1>
+            
+            <div class="stats-display">
+                <div class="stat-item">
+                    <span class="stat-label">Cosmic Dust</span>
+                    <span id="cookie-count" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Per Second</span>
+                    <span id="cps-display" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Prestige</span>
+                    <span id="prestige-points-display" class="stat-value">0</span>
+                </div>
+            </div>
+
+            <div id="click-button" title="Click to earn Cosmic Dust">
+                <svg id="planet-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="planetGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#3498db;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#2c3e50;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="craterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#1abc9c;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#16a085;stop-opacity:1" />
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur"></feGaussianBlur>
+                            <feMerge>
+                                <feMergeNode in="blur"></feMergeNode>
+                                <feMergeNode in="SourceGraphic"></feMergeNode>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                    <circle id="planet-base" cx="50" cy="50" r="45" fill="url(#planetGradient)" filter="url(#glow)"/>
+                    <path id="planet-shadow" d="M50 50 L80 15 A45 45 0 0 1 20 15 Z" fill="#2980b9"/>
+                    <path id="planet-crater-1" d="M50 50 L80 85 A45 45 0 0 1 20 85 Z" fill="url(#craterGradient)"/>
+                    <circle id="planet-crater-2" cx="20" cy="30" r="5" fill="#ecf0f1"/>
+                    <circle id="planet-crater-3" cx="70" cy="40" r="3" fill="#ecf0f1"/>
+                    <circle id="planet-crater-4" cx="45" cy="80" r="4" fill="#ecf0f1"/>
+                </svg>
+            </div>
+            <button id="tutorial-button" class="tutorial-button">
+                <i class="fa-solid fa-graduation-cap"></i> Tutorial
+            </button>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Cosmic Dust</span>
+                    <span id="cookie-count-desktop" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Per Second</span>
+                    <span id="cps-display-desktop" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Prestige</span>
+                    <span id="prestige-points-display-desktop" class="stat-value">0</span>
+                </div>
+            </div>
+
+            <div id="upgrades-panel" class="collapsible-panel">
+                <div class="collapsible-header">
+                    <span>Upgrades</span>
+                    <i class="fa-solid fa-chevron-down icon"></i>
+                </div>
+                <div class="collapsible-content">
+                    <div id="upgrades-list"></div>
+                </div>
+            </div>
+
+            <div id="evolution-panel" class="collapsible-panel">
+                <div class="collapsible-header">
+                    <span>Evolve Upgrades</span>
+                    <i class="fa-solid fa-chevron-down icon"></i>
+                </div>
+                <div class="collapsible-content">
+                    <div id="evolvable-upgrades-list"></div>
+                </div>
+            </div>
+
+            <div id="investment-panel" class="collapsible-panel">
+                <div class="collapsible-header">
+                    <span>Investments</span>
+                    <i class="fa-solid fa-chevron-down icon"></i>
+                </div>
+                <div class="collapsible-content">
+                    <div id="investment-status" class="investment-status">
+                        <p>No active investment.</p>
+                    </div>
+                    <button id="invest-button" class="action-button" disabled>Invest 1M Dust (x5 Return)</button>
+                </div>
+            </div>
+            
+            <div id="prestige-panel" class="collapsible-panel">
+                <div class="collapsible-header">
+                    <span>Prestige System</span>
+                    <i class="fa-solid fa-chevron-down icon"></i>
+                </div>
+                <div class="collapsible-content">
+                    <p class="prestige-message">Reach <b>1 septillion</b> dust to prestige. This grants a permanent bonus and allows you to purchase permanent upgrades!</p>
+                    <button id="prestige-button" class="prestige-button" disabled>Prestige!</button>
+                    <h2>Permanent Upgrades</h2>
+                    <div id="permanent-upgrades-list" class="permanent-upgrades-list"></div>
+                </div>
+            </div>
+
+            <div id="cheat-panel" class="collapsible-panel">
+                <div class="collapsible-header">
+                    <span>Cheat Panel <i class="fa-solid fa-user-shield"></i></span>
+                    <i class="fa-solid fa-chevron-down icon"></i>
+                </div>
+                <div class="collapsible-content">
+                    <div class="cheat-panel-buttons">
+                        <button id="add-dust-button" class="cheat-button">Add 100 Septillion Dust</button>
+                        <button id="add-prestige-button" class="cheat-button">Add 100 Prestige Points</button>
+                        <button id="boost-click-button" class="cheat-button">Boost Click Power (x10)</button>
+                        <button id="boost-cps-button" class="cheat-button">Boost CPS (x10)</button>
+                        <button id="trigger-disaster-button" class="cheat-button">Trigger Random Disaster</button>
+                        <button id="reset-cheat-button" class="cheat-button">Reset All Progress (Normal Run)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="message-box"></div>
+    <div id="disaster-message-box"></div>
+    <div id="cheat-notification">
+        <span class="close-button">&times;</span>
+        WARNING: You have used a cheat function. This is now considered a cheat run.
+    </div>
+    <div id="cheat-mark">CHEAT RUN</div>
+
+    <div id="tutorial-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Galactic Clicker Tutorial</h2>
+            <div class="tutorial-text">
+                <h3>Welcome, Starfarer!</h3>
+                <p>Your mission is to gather as much **Cosmic Dust** as possible to expand your galactic empire.</p>
+                <br>
+                <h3>How to Play:</h3>
+                <ul>
+                    <li>**Click the Planet:** Tap the central planet to generate Cosmic Dust. Each tap gives you a small amount.</li>
+                    <li>**Buy Upgrades:** Use your Cosmic Dust to purchase **Upgrades** from the sidebar. Their cost increases by **3x** each time you buy one.</li>
+                    <li>**Bulk Buy/Sell:** Use the new **Buy Max** button on each upgrade to purchase the most you can afford at once. Selling gives you back a portion of the cost.</li>
+                    <li>**Evolve Upgrades:** Combine multiple of the same upgrade to create a much more powerful version!</li>
+                    <li>**Investments:** Put a large amount of dust into an investment that will pay out a huge return after a short time.</li>
+                    <li>**Prestige:** Once you've collected an immense amount of dust (**1 septillion**!), you can **Prestige**. This resets all your temporary progress but grants you **Prestige Points**.</li>
+                    <li>**Permanent Upgrades:** Use your Prestige Points to buy **Permanent Upgrades**. These bonuses last forever and make subsequent playthroughs much faster.</li>
+                    <li>**Beware Disasters:** Random cosmic events may strike, reducing your dust count. Be prepared!</li>
+                </ul>
+                <br>
+                <p>The path to cosmic dominance is long and challenging. Good luck!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let cookies = 0;
+        let cookiesPerClick = 1;
+        let cookiesPerSecond = 0;
+        let prestigePoints = 0;
+        let prestigeMultiplier = 1;
+        let prestigeCostMultiplier = 1;
+        let prestigeRequiredCookies = 1e24;
+        let isInvesting = false;
+        let investmentTimer = 0;
+        const investmentDuration = 60;
+        const investmentAmount = 1e6;
+        const investmentPayoutMultiplier = 5;
+        let disasterCooldown = 30;
+        let timeSinceDisaster = 0;
+        let isCheatRun = false;
+        let hasSeenCheatNotification = false;
+        
+        const upgrades = [
+            { id: 'u1', name: 'Cosmic Drone', baseCost: 10, cps: 1, count: 0, evolveTier: 1 },
+            { id: 'u2', name: 'Asteroid Miner', baseCost: 100, cps: 10, count: 0, evolveTier: 2 },
+            { id: 'u3', name: 'Galactic Refinery', baseCost: 1000, cps: 50, count: 0, evolveTier: 3 },
+            { id: 'u4', name: 'Stellar Synthesizer', baseCost: 10000, cps: 200, count: 0, evolveTier: 4 },
+            { id: 'u5', name: 'Quantum Processor', baseCost: 50000, cps: 1000, count: 0, evolveTier: 5 },
+            { id: 'u6', name: 'Dark Matter Collector', baseCost: 250000, cps: 5000, count: 0, evolveTier: 6 },
+            { id: 'u7', name: 'Neutron Star Forge', baseCost: 1e6, cps: 10000, count: 0, evolveTier: 7 },
+            { id: 'u8', name: 'Black Hole Harvester', baseCost: 1e7, cps: 50000, count: 0, evolveTier: 8 },
+            { id: 'u9', name: 'Singularity Extractor', baseCost: 5e7, cps: 250000, count: 0, evolveTier: 9 },
+            { id: 'u10', name: 'Dimension Shifter', baseCost: 2.5e8, cps: 1e6, count: 0, evolveTier: 10 },
+            { id: 'u11', name: 'Time Warp Generator', baseCost: 1e9, cps: 5e6, count: 0, evolveTier: 11 },
+            { id: 'u12', name: 'Cosmic String Loom', baseCost: 5e9, cps: 2.5e7, count: 0, evolveTier: 12 },
+            { id: 'u13', name: 'Hyperspace Conduit', baseCost: 2.5e10, cps: 1e8, count: 0, evolveTier: 13 },
+            { id: 'u14', name: 'Infinity Portal', baseCost: 1e11, cps: 5e8, count: 0, evolveTier: 14 },
+            { id: 'u15', name: 'Reality Bender', baseCost: 5e11, cps: 2.5e9, count: 0, evolveTier: 15 },
+            { id: 'u16', name: 'Omni-verse Reactor', baseCost: 2.5e12, cps: 1e10, count: 0, evolveTier: 16 },
+            { id: 'u17', name: 'Celestial Engine', baseCost: 1e13, cps: 5e10, count: 0, evolveTier: 17 },
+            { id: 'u18', name: 'Stardust Processor', baseCost: 5e13, cps: 2.5e11, count: 0, evolveTier: 18 },
+            { id: 'u19', name: 'Galaxy Forger', baseCost: 2.5e14, cps: 1e12, count: 0, evolveTier: 19 },
+            { id: 'u20', name: 'Cosmic Anomaly', baseCost: 1e15, cps: 5e12, count: 0, evolveTier: 20 },
+        ];
+        
+        const evolvedUpgrades = [
+            { id: 'e1', name: 'Singularity Drone', baseUpgradeId: 'u1', cps: 100, mergeCount: 10, count: 0, evolved: false },
+            { id: 'e2', name: 'Planet Cracker', baseUpgradeId: 'u2', cps: 1000, mergeCount: 10, count: 0, evolved: false },
+            { id: 'e3', name: 'Galactic Core', baseUpgradeId: 'u3', cps: 5000, mergeCount: 10, count: 0, evolved: false },
+            { id: 'e4', name: 'Supernova Synthesizer', baseUpgradeId: 'u4', cps: 20000, mergeCount: 10, count: 0, evolved: false },
+            { id: 'e5', name: 'Cosmic Processor', baseUpgradeId: 'u5', cps: 100000, mergeCount: 10, count: 0, evolved: false },
+            { id: 'e6', name: 'Void Collector', baseUpgradeId: 'u6', cps: 500000, mergeCount: 10, count: 0, evolved: false },
+        ];
+        
+        const permanentUpgrades = [
+            { id: 'p1', name: 'Prestige Click Power I', cost: 1, multiplier: 2, purchased: false, type: 'click' },
+            { id: 'p2', name: 'Prestige CPS Boost I', cost: 1, multiplier: 2, purchased: false, type: 'cps' },
+            { id: 'p3', name: 'Discounted Upgrades I', cost: 5, multiplier: 0.9, purchased: false, type: 'cost' },
+            { id: 'p4', name: 'Mega Click II', cost: 10, multiplier: 5, purchased: false, type: 'click' },
+            { id: 'p5', name: 'Hyper CPS II', cost: 10, multiplier: 5, purchased: false, type: 'cps' },
+            { id: 'p6', name: 'Prestige Power Surge', cost: 15, multiplier: 1.5, purchased: false, type: 'prestige' },
+            { id: 'p7', name: 'Click Multiplier III', cost: 20, multiplier: 10, purchased: false, type: 'click' },
+            { id: 'p8', name: 'CPS Multiplier III', cost: 20, multiplier: 10, purchased: false, type: 'cps' },
+            { id: 'p9', name: 'Discounted Upgrades II', cost: 30, multiplier: 0.8, purchased: false, type: 'cost' },
+            { id: 'p10', name: 'Prestige Point Doubler', cost: 40, multiplier: 2, purchased: false, type: 'prestige_gain' },
+            { id: 'p11', name: 'Click Power IV', cost: 50, multiplier: 20, purchased: false, type: 'click' },
+            { id: 'p12', name: 'CPS Boost IV', cost: 50, multiplier: 20, purchased: false, type: 'cps' },
+            { id: 'p13', name: 'Supernova Click', cost: 75, multiplier: 50, purchased: false, type: 'click' },
+            { id: 'p14', name: 'Galactic Engine', cost: 75, multiplier: 50, purchased: false, type: 'cps' },
+            { id: 'p15', name: 'Discounted Upgrades III', cost: 100, multiplier: 0.7, purchased: false, type: 'cost' },
+            { id: 'p16', name: 'Prestige Power Surge II', cost: 125, multiplier: 2, purchased: false, type: 'prestige' },
+            { id: 'p17', name: 'Ultimate Clicker', cost: 150, multiplier: 100, purchased: false, type: 'click' },
+            { id: 'p18', name: 'Universe Forge', cost: 150, multiplier: 100, purchased: false, type: 'cps' },
+            { id: 'p19', name: 'Prestige Point Tripler', cost: 200, multiplier: 3, purchased: false, type: 'prestige_gain' },
+            { id: 'p20', name: 'Cosmic Singularity', cost: 500, multiplier: 1000, purchased: false, type: 'prestige' }
+        ];
+        
+        const disasters = [
+            { name: 'Cosmic Storm', severity: 0.10, duration: 15, message: 'A Cosmic Storm reduces your dust production! (-10% CPS)' },
+            { name: 'Solar Flare', severity: 0.25, duration: 10, message: 'A Solar Flare knocks out your systems! (-25% CPS)' },
+            { name: 'Black Hole Event', severity: 0.50, duration: 5, message: 'A Black Hole Event threatens your empire! (-50% CPS)' },
+        ];
+        
+        let currentDisaster = null;
+        let disasterTimer = 0;
+        let lastDisasterTime = Date.now();
+        
+        const cookieCountDisplay = document.getElementById('cookie-count');
+        const cookieCountDesktopDisplay = document.getElementById('cookie-count-desktop');
+        const cpsDisplay = document.getElementById('cps-display');
+        const cpsDesktopDisplay = document.getElementById('cps-display-desktop');
+        const prestigePointsDisplay = document.getElementById('prestige-points-display');
+        const prestigePointsDesktopDisplay = document.getElementById('prestige-points-display-desktop');
+        const clickButton = document.getElementById('click-button');
+        const upgradesList = document.getElementById('upgrades-list');
+        const prestigeButton = document.getElementById('prestige-button');
+        const permanentUpgradesList = document.getElementById('permanent-upgrades-list');
+        const messageBox = document.getElementById('message-box');
+        const disasterMessageBox = document.getElementById('disaster-message-box');
+        const investButton = document.getElementById('invest-button');
+        const investmentStatus = document.getElementById('investment-status');
+        const evolvableUpgradesList = document.getElementById('evolvable-upgrades-list');
+        const tutorialButton = document.getElementById('tutorial-button');
+        const tutorialModal = document.getElementById('tutorial-modal');
+        const modalCloseButton = document.querySelector('.modal .close-button');
+        const cheatNotification = document.getElementById('cheat-notification');
+        const cheatNotificationCloseButton = document.querySelector('#cheat-notification .close-button');
+        const cheatMark = document.getElementById('cheat-mark');
+        
+        const addDustButton = document.getElementById('add-dust-button');
+        const addPrestigeButton = document.getElementById('add-prestige-button');
+        const boostClickButton = document.getElementById('boost-click-button');
+        const boostCpsButton = document.getElementById('boost-cps-button');
+        const triggerDisasterButton = document.getElementById('trigger-disaster-button');
+        const resetCheatButton = document.getElementById('reset-cheat-button');
+        
+        function formatNumber(num) {
+            if (num < 1000) return num.toFixed(0);
+            const units = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+            const tier = Math.floor(Math.log10(num) / 3);
+            const scaled = num / Math.pow(1000, tier);
+            return `${scaled.toFixed(1)}${units[tier]}`;
+        }
+        
+        function updateDisplay() {
+            const formattedCookies = formatNumber(cookies);
+            const formattedCPS = formatNumber(cookiesPerSecond);
+            
+            if (cookieCountDisplay) cookieCountDisplay.textContent = formattedCookies;
+            if (cookieCountDesktopDisplay) cookieCountDesktopDisplay.textContent = formattedCookies;
+            if (cpsDisplay) cpsDisplay.textContent = formattedCPS;
+            if (cpsDesktopDisplay) cpsDesktopDisplay.textContent = formattedCPS;
+            if (prestigePointsDisplay) prestigePointsDisplay.textContent = prestigePoints;
+            if (prestigePointsDesktopDisplay) prestigePointsDesktopDisplay.textContent = prestigePoints;
+        
+            upgrades.forEach(upgrade => {
+                const upgradeButton = document.getElementById(`upgrade-button-${upgrade.id}`);
+                const sellButton = document.getElementById(`sell-button-${upgrade.id}`);
+                const buyMaxButton = document.getElementById(`buy-max-button-${upgrade.id}`);
+                const totalCost = calculateUpgradeCost(upgrade, 1);
+                const maxAmount = calculateMaxBuyAmount(upgrade);
+                
+                if (upgradeButton) {
+                    upgradeButton.disabled = cookies < totalCost;
+                    upgradeButton.querySelector('.upgrade-cost').textContent = `${formatNumber(totalCost)} Dust`;
+                }
+                if (sellButton) {
+                    sellButton.disabled = upgrade.count < 1;
+                }
+                if (buyMaxButton) {
+                    buyMaxButton.disabled = maxAmount < 1;
+                }
+            });
+
+            const prestigePointsGained = Math.max(1, Math.floor(Math.sqrt(cookies / prestigeRequiredCookies) * prestigeMultiplier));
+            if (prestigeButton) {
+                prestigeButton.disabled = cookies < prestigeRequiredCookies;
+                prestigeButton.textContent = `Prestige for ${prestigePointsGained} Points!`;
+            }
+        
+            permanentUpgrades.forEach(pu => {
+                const button = document.getElementById(`p-upgrade-button-${pu.id}`);
+                if (button) {
+                    button.disabled = prestigePoints < pu.cost || pu.purchased;
+                    if (pu.purchased) {
+                        button.querySelector('.upgrade-cost').textContent = 'Purchased';
+                    }
+                }
+            });
+
+            if (investButton) {
+                investButton.disabled = isInvesting || cookies < investmentAmount;
+            }
+        
+            evolvedUpgrades.forEach(evolvedUpgrade => {
+                const evolveButton = document.getElementById(`evolve-button-${evolvedUpgrade.id}`);
+                const baseUpgrade = upgrades.find(u => u.id === evolvedUpgrade.baseUpgradeId);
+                if (evolveButton) {
+                    const requiredCount = evolvedUpgrade.mergeCount;
+                    const canEvolve = baseUpgrade && baseUpgrade.count >= requiredCount && evolvedUpgrade.count === 0;
+                    evolveButton.disabled = !canEvolve;
+                    if (evolvedUpgrade.count > 0) {
+                        evolveButton.textContent = `Evolved: ${evolvedUpgrade.name}`;
+                        evolveButton.disabled = true;
+                    }
+                }
+            });
+
+            if (cheatMark) {
+                cheatMark.style.display = isCheatRun ? 'block' : 'none';
+            }
+        }
+        
+        function calculateUpgradeCost(upgrade, amount) {
+            let totalCost = 0;
+            let currentCost = upgrade.baseCost * Math.pow(3, upgrade.count);
+            for (let i = 0; i < amount; i++) {
+                totalCost += currentCost;
+                currentCost *= 3;
+            }
+            return totalCost * prestigeCostMultiplier;
+        }
+
+        function calculateMaxBuyAmount(upgrade) {
+            let amount = 0;
+            let tempCookies = cookies;
+            let tempCost = upgrade.baseCost * Math.pow(3, upgrade.count) * prestigeCostMultiplier;
+            while (tempCookies >= tempCost) {
+                tempCookies -= tempCost;
+                tempCost *= 3;
+                amount++;
+            }
+            return amount;
+        }
+        
+        function calculateSellPrice(upgrade, amount) {
+            let totalSellPrice = 0;
+            let currentSellCost = upgrade.baseCost * Math.pow(3, upgrade.count - 1);
+            for (let i = 0; i < amount; i++) {
+                totalSellPrice += (currentSellCost) * 0.5;
+                currentSellCost /= 3;
+            }
+            return totalSellPrice;
+        }
+        
+        function handleManualClick() {
+            cookies += cookiesPerClick;
+            animateClick();
+            updateDisplay();
+        }
+        
+        function animateClick() {
+            const animationElement = document.createElement('div');
+            animationElement.className = 'click-animation';
+            animationElement.textContent = `+${formatNumber(cookiesPerClick)}`;
+            clickButton.appendChild(animationElement);
+        
+            setTimeout(() => {
+                animationElement.remove();
+            }, 1000);
+        }
+        
+        function handleBuyUpgrade(upgradeId, amountToBuy) {
+            const upgrade = upgrades.find(u => u.id === upgradeId);
+            if (!upgrade) return;
+        
+            const buyAmount = amountToBuy || 1;
+            const totalCost = calculateUpgradeCost(upgrade, buyAmount);
+        
+            if (cookies >= totalCost) {
+                cookies -= totalCost;
+                upgrade.count += buyAmount;
+                updateCPS();
+                renderUpgrades();
+                updateDisplay();
+                showMessage(`Purchased ${buyAmount} ${upgrade.name}(s)!`, false);
+            }
+        }
+        
+        function handleSellUpgrade(upgradeId) {
+            const upgrade = upgrades.find(u => u.id === upgradeId);
+            if (!upgrade) return;
+        
+            const sellAmount = 1;
+            
+            if (upgrade.count >= sellAmount) {
+                const totalSellPrice = calculateSellPrice(upgrade, sellAmount);
+                cookies += totalSellPrice;
+                upgrade.count -= sellAmount;
+                updateCPS();
+                renderUpgrades();
+                updateDisplay();
+                showMessage(`Sold ${sellAmount} ${upgrade.name}(s)!`, false);
+            }
+        }
+
+        function handleEvolveUpgrade(evolvedUpgradeId) {
+            const evolvedUpgrade = evolvedUpgrades.find(eu => eu.id === evolvedUpgradeId);
+            const baseUpgrade = upgrades.find(u => u.id === evolvedUpgrade.baseUpgradeId);
+
+            if (baseUpgrade && baseUpgrade.count >= evolvedUpgrade.mergeCount && evolvedUpgrade.count === 0) {
+                baseUpgrade.count -= evolvedUpgrade.mergeCount;
+                evolvedUpgrade.count += 1;
+                
+                updateCPS();
+                
+                showMessage(`Evolved ${evolvedUpgrade.name}!`, false);
+                renderUpgrades();
+                renderEvolvableUpgrades();
+                updateDisplay();
+            }
+        }
+        
+        function renderUpgrades() {
+            if (!upgradesList) return;
+            upgradesList.innerHTML = '';
+            upgrades.forEach(upgrade => {
+                const upgradeItem = document.createElement('div');
+                upgradeItem.className = 'upgrade-item';
+        
+                const upgradeButton = document.createElement('button');
+                upgradeButton.className = 'upgrade-button';
+                upgradeButton.id = `upgrade-button-${upgrade.id}`;
+                
+                const currentCost = calculateUpgradeCost(upgrade, 1);
+                
+                upgradeButton.innerHTML = `
+                    <div class="upgrade-info">
+                        <span class="upgrade-name">${upgrade.name}</span>
+                        <span class="upgrade-stats">Count: ${upgrade.count} | CPS: ${formatNumber(upgrade.cps * upgrade.count)}</span>
+                    </div>
+                    <div class="upgrade-cost">${formatNumber(currentCost)} Dust</div>
+                `;
+                upgradeButton.addEventListener('click', () => handleBuyUpgrade(upgrade.id));
+        
+                const sellButton = document.createElement('button');
+                sellButton.className = 'upgrade-sell-button';
+                sellButton.id = `sell-button-${upgrade.id}`;
+                sellButton.innerHTML = `<i class="fa-solid fa-sack-xmark"></i>`;
+                sellButton.addEventListener('click', () => handleSellUpgrade(upgrade.id));
+
+                const buyMaxButton = document.createElement('button');
+                buyMaxButton.className = 'upgrade-button buy-max-upgrade-button';
+                buyMaxButton.id = `buy-max-button-${upgrade.id}`;
+                buyMaxButton.textContent = 'Buy Max';
+                buyMaxButton.addEventListener('click', () => {
+                    const maxAmount = calculateMaxBuyAmount(upgrade);
+                    if(maxAmount > 0) {
+                        handleBuyUpgrade(upgrade.id, maxAmount);
+                    }
+                });
+        
+                upgradeItem.appendChild(upgradeButton);
+                upgradeItem.appendChild(buyMaxButton);
+                upgradeItem.appendChild(sellButton);
+                upgradesList.appendChild(upgradeItem);
+            });
+            updateDisplay();
+        }
+
+        function renderEvolvableUpgrades() {
+            if (!evolvableUpgradesList) return;
+            evolvableUpgradesList.innerHTML = '';
+            evolvedUpgrades.forEach(evolvedUpgrade => {
+                const baseUpgrade = upgrades.find(u => u.id === evolvedUpgrade.baseUpgradeId);
+                const upgradeItem = document.createElement('div');
+                upgradeItem.className = 'upgrade-item';
+                
+                const evolveButton = document.createElement('button');
+                evolveButton.className = 'evolve-button upgrade-button';
+                evolveButton.id = `evolve-button-${evolvedUpgrade.id}`;
+                
+                let buttonText;
+                if (evolvedUpgrade.count > 0) {
+                    buttonText = `Evolved: ${evolvedUpgrade.name} (Count: ${evolvedUpgrade.count}) | CPS: ${formatNumber(evolvedUpgrade.cps)}`;
+                } else {
+                    buttonText = `Evolve ${evolvedUpgrade.name} by merging ${evolvedUpgrade.mergeCount} ${baseUpgrade.name}(s) - ${baseUpgrade.count}/${evolvedUpgrade.mergeCount}`;
+                }
+                
+                evolveButton.innerHTML = buttonText;
+                evolveButton.addEventListener('click', () => handleEvolveUpgrade(evolvedUpgrade.id));
+
+                upgradeItem.appendChild(evolveButton);
+                evolvableUpgradesList.appendChild(upgradeItem);
+            });
+            updateDisplay();
+        }
+        
+        function handlePrestige() {
+            if (cookies >= prestigeRequiredCookies) {
+                const prestigePointsGained = Math.max(1, Math.floor(Math.sqrt(cookies / prestigeRequiredCookies) * prestigeMultiplier));
+                prestigePoints += prestigePointsGained;
+        
+                cookies = 0;
+                cookiesPerClick = 1;
+                cookiesPerSecond = 0;
+        
+                upgrades.forEach(upgrade => {
+                    upgrade.count = 0;
+                });
+
+                evolvedUpgrades.forEach(evolvedUpgrade => {
+                    evolvedUpgrade.count = 0;
+                });
+        
+                prestigeRequiredCookies *= 1000;
+        
+                renderUpgrades();
+                renderPermanentUpgrades();
+                renderEvolvableUpgrades();
+                updateDisplay();
+                showMessage(`Prestiged! Gained ${prestigePointsGained} Prestige Points!`, false);
+            }
+        }
+        
+        function renderPermanentUpgrades() {
+            if (!permanentUpgradesList) return;
+            permanentUpgradesList.innerHTML = '';
+            permanentUpgrades.forEach(pu => {
+                const upgradeItem = document.createElement('div');
+                upgradeItem.className = 'upgrade-item';
+        
+                const upgradeButton = document.createElement('button');
+                upgradeButton.className = 'upgrade-button';
+                upgradeButton.id = `p-upgrade-button-${pu.id}`;
+                upgradeButton.innerHTML = `
+                    <div class="upgrade-info">
+                        <span class="upgrade-name">${pu.name}</span>
+                        <span class="upgrade-stats">${pu.type === 'cost' ? 'x' : '+'} ${pu.multiplier}</span>
+                    </div>
+                    <div class="upgrade-cost">${pu.cost} Points</div>
+                `;
+                upgradeButton.addEventListener('click', () => handleBuyPermanentUpgrade(pu.id));
+        
+                upgradeItem.appendChild(upgradeButton);
+                permanentUpgradesList.appendChild(upgradeItem);
+            });
+            updateDisplay();
+        }
+        
+        function handleBuyPermanentUpgrade(puId) {
+            const pu = permanentUpgrades.find(p => p.id === puId);
+            if (!pu || pu.purchased) return;
+        
+            if (prestigePoints >= pu.cost) {
+                prestigePoints -= pu.cost;
+                pu.purchased = true;
+        
+                if (pu.type === 'click') cookiesPerClick *= pu.multiplier;
+                if (pu.type === 'cps') {
+                    upgrades.forEach(upgrade => upgrade.cps *= pu.multiplier);
+                    evolvedUpgrades.forEach(evolvedUpgrade => evolvedUpgrade.cps *= pu.multiplier);
+                    updateCPS();
+                }
+                if (pu.type === 'cost') prestigeCostMultiplier *= pu.multiplier;
+                if (pu.type === 'prestige') prestigeRequiredCookies /= pu.multiplier;
+                if (pu.type === 'prestige_gain') prestigeMultiplier *= pu.multiplier;
+        
+                renderPermanentUpgrades();
+                updateDisplay();
+                showMessage(`Purchased permanent upgrade: ${pu.name}!`, false);
+            }
+        }
+        
+        function updateCPS() {
+            let totalCps = 0;
+            upgrades.forEach(upgrade => totalCps += upgrade.cps * upgrade.count);
+            evolvedUpgrades.forEach(evolvedUpgrade => totalCps += evolvedUpgrade.cps * evolvedUpgrade.count);
+            cookiesPerSecond = totalCps;
+            updateDisplay();
+        }
+
+        function handleInvestment() {
+            if (isInvesting || cookies < investmentAmount) return;
+
+            cookies -= investmentAmount;
+            isInvesting = true;
+            investmentTimer = investmentDuration;
+            if (investButton) investButton.disabled = true;
+            showMessage(`Investment started! Come back in ${investmentDuration} seconds for your payout.`, false);
+        }
+
+        function updateInvestmentStatus() {
+            if (!investmentStatus) return;
+            if (isInvesting) {
+                investmentStatus.innerHTML = `<p>Investment active: ${investmentTimer} seconds remaining.</p>`;
+            } else {
+                investmentStatus.innerHTML = `<p>No active investment.</p>`;
+            }
+        }
+
+        function handleDisaster(manual = false) {
+            if (currentDisaster) return;
+            
+            const chance = Math.random();
+            const disasterOccurs = manual || chance < 0.1;
+
+            if (disasterOccurs) {
+                const randomDisaster = disasters[Math.floor(Math.random() * disasters.length)];
+                currentDisaster = randomDisaster;
+                disasterTimer = randomDisaster.duration;
+                if (disasterMessageBox) {
+                    disasterMessageBox.textContent = randomDisaster.message;
+                    disasterMessageBox.style.display = 'block';
+                }
+
+                cookiesPerSecond *= (1 - randomDisaster.severity);
+                updateDisplay();
+            }
+        }
+        
+        function gameLoop() {
+            cookies += cookiesPerSecond / 10;
+        
+            if (isInvesting) {
+                investmentTimer--;
+                if (investmentTimer <= 0) {
+                    cookies += investmentAmount * investmentPayoutMultiplier;
+                    isInvesting = false;
+                    showMessage(`Investment complete! You earned ${formatNumber(investmentAmount * investmentPayoutMultiplier)} Cosmic Dust!`, false);
+                }
+            }
+        
+            if (currentDisaster) {
+                disasterTimer--;
+                if (disasterTimer <= 0) {
+                    cookiesPerSecond /= (1 - currentDisaster.severity);
+                    if (disasterMessageBox) disasterMessageBox.style.display = 'none';
+                    currentDisaster = null;
+                    showMessage('The cosmic event has passed. Production is back to normal.', false);
+                    lastDisasterTime = Date.now();
+                }
+            } else {
+                const now = Date.now();
+                if ((now - lastDisasterTime) / 1000 > disasterCooldown) {
+                    handleDisaster();
+                    lastDisasterTime = now;
+                }
+            }
+
+            updateInvestmentStatus();
+            updateDisplay();
+        }
+        
+        function showMessage(text, isDisaster) {
+            const box = isDisaster ? disasterMessageBox : messageBox;
+            if (!box) return;
+            box.textContent = text;
+            box.style.display = 'block';
+            if (!isDisaster) {
+                setTimeout(() => {
+                    box.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function showCheatNotification() {
+            if (hasSeenCheatNotification) return;
+
+            if (cheatNotification) cheatNotification.style.display = 'block';
+            hasSeenCheatNotification = true;
+        }
+
+        function handleAdminAction() {
+            isCheatRun = true;
+            showCheatNotification();
+            updateDisplay();
+        }
+
+        function resetAllProgress() {
+            cookies = 0;
+            cookiesPerClick = 1;
+            cookiesPerSecond = 0;
+            prestigePoints = 0;
+            prestigeMultiplier = 1;
+            prestigeCostMultiplier = 1;
+            prestigeRequiredCookies = 1e24;
+            isInvesting = false;
+            investmentTimer = 0;
+            disasterCooldown = 30;
+            timeSinceDisaster = 0;
+            isCheatRun = false;
+            hasSeenCheatNotification = false;
+            
+            upgrades.forEach(upgrade => {
+                upgrade.count = 0;
+            });
+            evolvedUpgrades.forEach(evolvedUpgrade => {
+                evolvedUpgrade.count = 0;
+            });
+            permanentUpgrades.forEach(pu => {
+                pu.purchased = false;
+            });
+
+            renderUpgrades();
+            renderEvolvableUpgrades();
+            renderPermanentUpgrades();
+            updateDisplay();
+        }
+
+        function setupCollapsiblePanels() {
+            document.querySelectorAll('.collapsible-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.icon');
+                    const isOpen = header.classList.contains('open');
+
+                    // Close all other panels
+                    document.querySelectorAll('.collapsible-header').forEach(h => {
+                        if (h !== header) {
+                            h.classList.remove('open');
+                            if (h.nextElementSibling) h.nextElementSibling.classList.remove('open');
+                            if (h.querySelector('.icon')) {
+                                h.querySelector('.icon').classList.remove('fa-chevron-up');
+                                h.querySelector('.icon').classList.add('fa-chevron-down');
+                            }
+                        }
+                    });
+
+                    // Toggle the clicked panel
+                    header.classList.toggle('open');
+                    if (content) content.classList.toggle('open');
+                    if (icon) {
+                        icon.classList.toggle('fa-chevron-down');
+                        icon.classList.toggle('fa-chevron-up');
+                    }
+                });
+            });
+        }
+        
+        window.onload = function() {
+            renderUpgrades();
+            renderEvolvableUpgrades();
+            renderPermanentUpgrades();
+            updateDisplay();
+            setupCollapsiblePanels();
+            
+            if (clickButton) clickButton.addEventListener('click', handleManualClick);
+            if (prestigeButton) prestigeButton.addEventListener('click', handlePrestige);
+            if (investButton) investButton.addEventListener('click', handleInvestment);
+            
+            if (tutorialButton) {
+                tutorialButton.addEventListener('click', () => {
+                    if (tutorialModal) tutorialModal.style.display = 'block';
+                });
+            }
+
+            if (modalCloseButton) {
+                modalCloseButton.addEventListener('click', () => {
+                    if (tutorialModal) tutorialModal.style.display = 'none';
+                });
+            }
+
+            if (cheatNotificationCloseButton) {
+                cheatNotificationCloseButton.addEventListener('click', () => {
+                    if (cheatNotification) cheatNotification.style.display = 'none';
+                });
+            }
+
+            if (addDustButton) addDustButton.addEventListener('click', () => {
+                cookies += 1e26;
+                handleAdminAction();
+            });
+
+            if (addPrestigeButton) addPrestigeButton.addEventListener('click', () => {
+                prestigePoints += 100;
+                handleAdminAction();
+            });
+
+            if (boostClickButton) boostClickButton.addEventListener('click', () => {
+                cookiesPerClick *= 10;
+                handleAdminAction();
+            });
+
+            if (boostCpsButton) boostCpsButton.addEventListener('click', () => {
+                upgrades.forEach(upgrade => upgrade.cps *= 10);
+                evolvedUpgrades.forEach(evolvedUpgrade => evolvedUpgrade.cps *= 10);
+                updateCPS();
+                handleAdminAction();
+            });
+
+            if (triggerDisasterButton) triggerDisasterButton.addEventListener('click', () => {
+                handleDisaster(true); // Manually trigger disaster
+                handleAdminAction();
+            });
+
+            if (resetCheatButton) resetCheatButton.addEventListener('click', resetAllProgress);
+        
+            setInterval(gameLoop, 100);
+        };
+    </script>
+</body>
+</html>
